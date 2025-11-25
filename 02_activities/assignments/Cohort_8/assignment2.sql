@@ -121,36 +121,26 @@ HINT: There are a possibly a few ways to do this query, but if you're struggling
 "best day" and "worst day"; 
 3) Query the second temp table twice, once for the best day, once for the worst day, 
 with a UNION binding them. */
-
-SELECT 
-	market_date,
-	total_sales
-FROM	
-	(WITH sum_daily_sales as	(	SELECT *,
-										SUM(cost_to_customer_per_qty) OVER (PARTITION BY market_date ORDER BY market_date) as daily_sales
+	
+WITH sum_daily_sales as	(	SELECT *,
+										SUM(cost_to_customer_per_qty*quantity) OVER (PARTITION BY market_date ORDER BY market_date) as total_sales
 									FROM 
 										customer_purchases
-								)
+								) 
 							
-	SELECT *, MAX(daily_sales)  total_sales
-	FROM sum_daily_sales)
-
-UNION
-
-SELECT market_date, total_sales
-
-FROM	(WITH sum_daily_sales as (
-									SELECT *,
-										SUM(cost_to_customer_per_qty) OVER (PARTITION BY market_date ORDER BY market_date) as daily_sales
-									FROM 
-										customer_purchases
-								 )
-							
-	SELECT *, MIN(daily_sales) total_sales
-	FROM sum_daily_sales);
 
 	
+	SELECT market_date, MAX(total_sales) total_sales
+	FROM sum_daily_sales
 	
+	UNION
+	
+	SELECT market_date, MIN(total_sales) total_sales
+	FROM sum_daily_sales
+		
+		
+		
+		
 /* SECTION 3 */
 
 -- Cross Join
@@ -177,7 +167,8 @@ FROM (	SELECT DISTINCT customer_id, p.product_name, v.vendor_name, v.vendor_id, 
 			ON v.vendor_id = vi.vendor_id
 		INNER JOIN product p
 			ON p.product_id = vi.product_id
-		CROSS JOIN customer)
+		CROSS JOIN customer
+		)
 	
 GROUP BY product_id;
 
